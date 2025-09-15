@@ -6,6 +6,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { requireAuth, type AuthenticatedRequest } from "./middleware/auth";
 import { insertDocumentSchema, insertJobSchema } from "@shared/schema";
 import { addVideoProcessingJob, getQueueStats } from "./jobs/videoProcessor";
+import { websocketService } from "./services/websocketService";
 import * as youtubeService from "./services/youtubeService";
 import path from "path";
 import fs from "fs/promises";
@@ -280,32 +281,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // WebSocket server for real-time updates
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  wss.on('connection', (ws: WebSocket, req) => {
-    console.log('WebSocket connection established');
-    
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        if (data.type === 'subscribe' && data.jobId) {
-          // Subscribe to job updates
-          ws.send(JSON.stringify({
-            type: 'subscribed',
-            jobId: data.jobId
-          }));
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-    
-    ws.on('close', () => {
-      console.log('WebSocket connection closed');
-    });
-  });
+  // Initialize WebSocket service for real-time updates
+  websocketService.initialize(httpServer);
 
   return httpServer;
 }

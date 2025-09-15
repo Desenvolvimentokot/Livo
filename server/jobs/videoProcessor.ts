@@ -1,4 +1,5 @@
 import { storage } from '../storage';
+import { websocketService } from '../services/websocketService';
 import * as youtubeService from '../services/youtubeService';
 import * as aiService from '../services/aiService';
 import * as documentService from '../services/documentService';
@@ -111,8 +112,7 @@ export async function processVideo(data: ProcessingJobData): Promise<ProcessingR
 }
 
 /**
- * Updates job progress in database
- * In production, this would also emit WebSocket events
+ * Updates job progress in database and broadcasts to WebSocket subscribers
  */
 async function updateJobProgress(
   jobId: number, 
@@ -130,8 +130,17 @@ async function updateJobProgress(
       status: status as any
     });
     
-    // TODO: Emit WebSocket event for real-time updates
-    // io.to(`job_${jobId}`).emit('progress', { jobId, progress, currentStep, error });
+    // Broadcast progress update to WebSocket subscribers
+    websocketService.broadcastProgress(jobId, {
+      type: 'progress',
+      jobId,
+      status,
+      progress,
+      currentStep,
+      errorMessage: error || null
+    });
+    
+    console.log(`Progress update for job ${jobId}: ${progress}% - ${currentStep}`);
     
   } catch (updateError) {
     console.error('Error updating job progress:', updateError);

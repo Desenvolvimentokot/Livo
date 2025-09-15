@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/Header";
 import VideoInfo from "@/components/Processing/VideoInfo";
@@ -17,7 +17,9 @@ export default function Processing() {
   const { jobId } = useParams();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const { socket } = useSocket();
+  const { isConnected, connectionState, subscribeToJob, onProgressUpdate, isSubscriptionPending, isSubscriptionActive } = useSocket();
+  const queryClient = useQueryClient();
+  const [realtimeProgress, setRealtimeProgress] = useState<any>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -37,36 +39,62 @@ export default function Processing() {
   const { data: jobData, isLoading: jobLoading, refetch } = useQuery<any>({
     queryKey: ["/api/jobs", jobId, "progress"],
     enabled: !!jobId && isAuthenticated,
-    refetchInterval: jobData?.status === 'PROCESSING' ? 2000 : false,
+    refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 2000 : false),
     retry: false,
   });
 
-  // WebSocket for real-time updates
+  // WebSocket for real-time updates - register message handler first
   useEffect(() => {
-    if (socket && jobId) {
-      socket.send(JSON.stringify({
-        type: 'subscribe',
-        jobId: parseInt(jobId!)
-      }));
+    if (!jobId) return;
 
-      const handleMessage = (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'progress' && data.jobId === parseInt(jobId!)) {
-            refetch();
-          }
-        } catch (error) {
-          console.error('WebSocket message error:', error);
+    // Register progress update handler first
+    const unsubscribeProgressHandler = onProgressUpdate((update) => {
+      if (update.jobId === parseInt(jobId!)) {
+        console.log('Received progress update:', update);
+        
+        // Update realtime progress state
+        setRealtimeProgress(update);
+        
+        // Invalidate and refetch query to get latest data
+        queryClient.invalidateQueries({
+          queryKey: ["/api/jobs", jobId, "progress"]
+        });
+        
+        // Show toast for status changes
+        if (update.status === 'COMPLETED') {
+          toast({
+            title: "Document Ready!",
+            description: "Your document has been successfully created.",
+            variant: "default",
+          });
+        } else if (update.status === 'FAILED') {
+          toast({
+            title: "Processing Failed",
+            description: update.errorMessage || "An error occurred during processing.",
+            variant: "destructive",
+          });
         }
-      };
+      }
+    });
 
-      socket.addEventListener('message', handleMessage);
+    return () => {
+      unsubscribeProgressHandler();
+    };
+  }, [jobId, onProgressUpdate, queryClient, toast]);
 
-      return () => {
-        socket.removeEventListener('message', handleMessage);
-      };
+  // Separate effect for subscription management
+  useEffect(() => {
+    if (connectionState === 'authenticated' && jobId) {
+      // Subscribe to job updates when connection is fully ready and authenticated
+      const success = subscribeToJob(parseInt(jobId!));
+      
+      if (success) {
+        console.log(`Successfully subscribed to job ${jobId} for real-time updates`);
+      } else {
+        console.log(`Subscription for job ${jobId} queued for when connection is ready`);
+      }
     }
-  }, [socket, jobId, refetch]);
+  }, [connectionState, jobId, subscribeToJob]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -90,7 +118,12 @@ export default function Processing() {
     );
   }
 
-  const job = jobData as any;
+  // Use realtime progress if available, otherwise fall back to API data
+  const currentJob = realtimeProgress && realtimeProgress.jobId === parseInt(jobId!) 
+    ? { ...jobData, ...realtimeProgress } 
+    : jobData;
+  
+  const job = currentJob as any;
   const document = job?.document;
 
   return (
@@ -107,11 +140,32 @@ export default function Processing() {
               <span className="text-lg font-semibold text-foreground">Processing Document</span>
             </div>
             
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span data-testid="text-processing-status">
-                {job?.status === 'COMPLETED' ? 'Completed' : 'Processing...'}
-              </span>
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+              {/* WebSocket Connection Status */}
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionState === 'authenticated' && isSubscriptionActive(parseInt(jobId!)) ? 'bg-green-500' : 
+                  connectionState === 'connected' || connectionState === 'connecting' || isSubscriptionPending(parseInt(jobId!)) ? 'bg-yellow-500 animate-pulse' : 
+                  'bg-red-500'
+                }`}></div>
+                <span data-testid="text-ws-status">
+                  {connectionState === 'authenticated' && isSubscriptionActive(parseInt(jobId!)) ? 'Subscribed' :
+                   connectionState === 'connected' ? 'Authenticating...' :
+                   connectionState === 'connecting' ? 'Connecting...' :
+                   isSubscriptionPending(parseInt(jobId!)) ? 'Subscribing...' : 
+                   'Disconnected'}
+                </span>
+              </div>
+              
+              {/* Processing Status */}
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${job?.status === 'PROCESSING' ? 'animate-pulse bg-blue-500' : job?.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                <span data-testid="text-processing-status">
+                  {job?.status === 'COMPLETED' ? 'Completed' : 
+                   job?.status === 'FAILED' ? 'Failed' : 
+                   job?.status === 'PROCESSING' ? 'Processing...' : 'Pending'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
