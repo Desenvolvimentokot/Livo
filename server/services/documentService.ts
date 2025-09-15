@@ -87,6 +87,42 @@ export function processTemplate(templateHtml: string, data: any): string {
     processedHtml = processedHtml.replace(/\{\{instructions\}\}/g, instructionsHtml);
   }
   
+  if (data.slides) {
+    // Presentation processing
+    const slidesHtml = data.slides.map((slide: any) => `
+      <div class="slide">
+        <div class="slide-number">Slide ${slide.slideNumber}</div>
+        <h2 class="slide-title">${slide.title}</h2>
+        <div class="slide-content">${slide.content.replace(/\n/g, '</p><p>')}</div>
+        ${slide.notes ? `
+          <div class="speaker-notes">
+            <div class="speaker-notes-label">Speaker Notes</div>
+            <div class="speaker-notes-content">${slide.notes}</div>
+          </div>` : ''}
+      </div>
+    `).join('');
+    processedHtml = processedHtml.replace(/\{\{slides\}\}/g, slidesHtml);
+  }
+  
+  if (data.mainPoints) {
+    // Summary processing
+    const mainPointsHtml = data.mainPoints.map((point: string) => `<li>${point}</li>`).join('');
+    processedHtml = processedHtml.replace(/\{\{mainPoints\}\}/g, `<ul>${mainPointsHtml}</ul>`);
+    
+    processedHtml = processedHtml.replace(/\{\{overview\}\}/g, data.overview || '');
+    processedHtml = processedHtml.replace(/\{\{conclusion\}\}/g, data.conclusion || '');
+    
+    if (data.details) {
+      const detailsHtml = data.details.map((detail: any) => `
+        <div class="detail-item">
+          <h3 class="detail-topic">${detail.topic}</h3>
+          <div class="detail-summary">${detail.summary}</div>
+        </div>
+      `).join('');
+      processedHtml = processedHtml.replace(/\{\{details\}\}/g, detailsHtml);
+    }
+  }
+  
   return processedHtml;
 }
 
