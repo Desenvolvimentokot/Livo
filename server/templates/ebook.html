@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+        
+        .title-page {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 60px 0;
+            border-bottom: 3px solid #eee;
+        }
+        
+        .title {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            font-size: 1.3em;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+        
+        .meta-info {
+            font-size: 0.9em;
+            color: #95a5a6;
+        }
+        
+        .introduction, .conclusion {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 40px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .chapter {
+            margin: 50px 0;
+            page-break-before: always;
+        }
+        
+        .chapter h2 {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .chapter-content {
+            font-size: 1.1em;
+            line-height: 1.7;
+        }
+        
+        .chapter-content p {
+            margin-bottom: 20px;
+        }
+        
+        .key-takeaways {
+            background: #e8f5e8;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 40px 0;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .key-takeaways h3 {
+            color: #27ae60;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .key-takeaways ul {
+            margin: 0;
+            padding-left: 25px;
+        }
+        
+        .key-takeaways li {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            
+            .chapter {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="title-page">
+        <h1 class="title">{{title}}</h1>
+        <p class="subtitle">{{subtitle}}</p>
+        <div class="meta-info">
+            Generated from YouTube Video • VideoScribe
+        </div>
+    </div>
+    
+    <div class="introduction">
+        <h2>Introduction</h2>
+        {{introduction}}
+    </div>
+    
+    {{chapters}}
+    
+    <div class="conclusion">
+        <h2>Conclusion</h2>
+        {{conclusion}}
+    </div>
+    
+    <div class="key-takeaways">
+        <h3>Key Takeaways</h3>
+        {{keyTakeaways}}
+    </div>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 50px 30px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .title {
+            font-size: 2.3em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        
+        .overview {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 40px 0;
+            border-left: 4px solid #6366f1;
+        }
+        
+        .overview h3 {
+            color: #6366f1;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .section {
+            margin: 50px 0;
+            padding: 30px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fefefe;
+        }
+        
+        .section h2 {
+            color: #1f2937;
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            font-weight: 600;
+        }
+        
+        .section-content {
+            font-size: 1.05em;
+            line-height: 1.8;
+        }
+        
+        .section-content p {
+            margin-bottom: 18px;
+        }
+        
+        .checklist {
+            background: #ecfdf5;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 40px 0;
+            border-left: 4px solid #10b981;
+        }
+        
+        .checklist h3 {
+            color: #10b981;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .checklist ul {
+            margin: 0;
+            padding-left: 0;
+            list-style: none;
+        }
+        
+        .checklist li {
+            margin-bottom: 12px;
+            padding-left: 35px;
+            position: relative;
+            font-weight: 500;
+        }
+        
+        .checklist li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .resources {
+            background: #fffbeb;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 40px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .resources h3 {
+            color: #f59e0b;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">{{title}}</h1>
+    </div>
+    
+    <div class="overview">
+        <h3>Overview</h3>
+        {{overview}}
+    </div>
+    
+    {{sections}}
+    
+    <div class="checklist">
+        <h3>Checklist</h3>
+        {{checklist}}
+    </div>
+    
+    <div class="resources">
+        <h3>Additional Resources</h3>
+        {{resources}}
+    </div>
+</body>
+</html>

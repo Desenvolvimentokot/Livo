@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .title {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .description {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .materials {
+            background: #f1f3f4;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            border-left: 4px solid #4285f4;
+        }
+        
+        .materials h3 {
+            color: #4285f4;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .materials ul {
+            margin: 0;
+            padding-left: 25px;
+        }
+        
+        .step {
+            margin: 40px 0;
+            padding: 25px;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            background: #fafbfc;
+        }
+        
+        .step h3 {
+            color: #1a73e8;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step h3::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            background: #1a73e8;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .step-content {
+            font-size: 1.05em;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+        
+        .step-tips {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            font-style: italic;
+        }
+        
+        .troubleshooting {
+            background: #fff5f5;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 40px 0;
+            border-left: 4px solid #e53e3e;
+        }
+        
+        .troubleshooting h3 {
+            color: #e53e3e;
+            margin-bottom: 15px;
+        }
+        
+        .final-tips {
+            background: #f0fff4;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 40px 0;
+            border-left: 4px solid #38a169;
+        }
+        
+        .final-tips h3 {
+            color: #38a169;
+            margin-bottom: 15px;
+        }
+        
+        .steps-container {
+            counter-reset: step-counter;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            
+            .step {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">{{title}}</h1>
+        <p class="description">{{description}}</p>
+    </div>
+    
+    <div class="materials">
+        <h3>Materials Needed</h3>
+        {{materials}}
+    </div>
+    
+    <div class="steps-container">
+        {{steps}}
+    </div>
+    
+    <div class="troubleshooting">
+        <h3>Troubleshooting</h3>
+        {{troubleshooting}}
+    </div>
+    
+    <div class="final-tips">
+        <h3>Final Tips</h3>
+        {{finalTips}}
+    </div>
+</body>
+</html>
