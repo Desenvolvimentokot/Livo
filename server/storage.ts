@@ -40,6 +40,7 @@ export interface IStorage {
     hoursUsed: number;
     hoursLimit: number;
     successRate: number;
+    plan: string;
   }>;
 }
 
@@ -155,10 +156,11 @@ export class DatabaseStorage implements IStorage {
     hoursUsed: number;
     hoursLimit: number;
     successRate: number;
+    plan: string;
   }> {
     const user = await this.getUser(userId);
     if (!user) {
-      return { documentsCount: 0, hoursUsed: 0, hoursLimit: 0, successRate: 0 };
+      return { documentsCount: 0, hoursUsed: 0, hoursLimit: 0.5, successRate: 0, plan: 'FREE' };
     }
 
     const [{ count: documentsCount }] = await db
@@ -181,6 +183,7 @@ export class DatabaseStorage implements IStorage {
       hoursUsed: user.hoursUsed || 0,
       hoursLimit: user.hoursLimit || 0.5,
       successRate,
+      plan: user.plan || 'FREE',
     };
   }
 }

@@ -55,15 +55,15 @@ export default function Home() {
             data-testid="stat-documents"
           />
           <StatsCard
-            title="Hours Processed"
-            value={(stats as any)?.hoursUsed || 0}
+            title="Hours Used"
+            value={`${(stats as any)?.hoursUsed || 0}h / ${(stats as any)?.hoursLimit || 0.5}h`}
             icon="clock"
             color="secondary"
             data-testid="stat-hours"
           />
           <StatsCard
             title="Current Plan"
-            value="Free"
+            value={(stats as any)?.plan || 'FREE'}
             icon="user"
             color="accent"
             data-testid="stat-plan"

@@ -1,6 +1,6 @@
 import { FileText, Clock, User, Check } from "lucide-react";
 
-interface StatsCardProps {
+interface StatsCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
   value: string | number;
   icon: "file-text" | "clock" | "user" | "check";
@@ -21,11 +21,11 @@ const colorMap = {
   green: "bg-green-100 text-green-600",
 };
 
-export default function StatsCard({ title, value, icon, color }: StatsCardProps) {
+export default function StatsCard({ title, value, icon, color, ...props }: StatsCardProps) {
   const Icon = iconMap[icon];
   
   return (
-    <div className="bg-card border border-border rounded-xl p-6">
+    <div className="bg-card border border-border rounded-xl p-6" {...props}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
