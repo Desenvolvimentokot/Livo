@@ -26,6 +26,10 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
         return renderGuide(content);
       case 'RECIPE':
         return renderRecipe(content);
+      case 'PRESENTATION':
+        return renderPresentation(content);
+      case 'SUMMARY':
+        return renderSummary(content);
       default:
         return renderGeneric(content);
     }
@@ -263,6 +267,126 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
               <p className="text-foreground">{instruction.instruction}</p>
             </div>
           ))}
+        </section>
+      )}
+    </div>
+  );
+
+  const renderPresentation = (content: any) => (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white rounded-t-xl">
+        <h1 className="text-3xl font-bold mb-4" data-testid="presentation-title">
+          {content.title || document.videoTitle}
+        </h1>
+        {content.subtitle && (
+          <p className="text-white/90 text-lg">{content.subtitle}</p>
+        )}
+        <div className="mt-4 flex items-center space-x-4 text-sm text-white/70">
+          <span>Generated from YouTube Video</span>
+          <span>•</span>
+          <span>Professional Presentation</span>
+        </div>
+      </div>
+
+      {/* Slides */}
+      {content.slides && content.slides.map((slide: any, index: number) => (
+        <section key={index} className="p-8 border-b border-border last:border-b-0">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-foreground">
+              Slide {slide.slideNumber || index + 1}: {slide.title}
+            </h2>
+            <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+              Slide {slide.slideNumber || index + 1}
+            </span>
+          </div>
+          <div className="prose prose-lg max-w-none text-foreground space-y-4">
+            <div className="whitespace-pre-wrap">{slide.content}</div>
+          </div>
+          {slide.notes && (
+            <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-l-4 border-yellow-500">
+              <h4 className="text-sm font-semibold text-yellow-700 dark:text-yellow-400 mb-2">
+                Speaker Notes
+              </h4>
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">{slide.notes}</p>
+            </div>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+
+  const renderSummary = (content: any) => (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-600 to-teal-600 p-8 text-white rounded-t-xl">
+        <h1 className="text-3xl font-bold mb-4" data-testid="summary-title">
+          {content.title || document.videoTitle}
+        </h1>
+        <div className="mt-4 flex items-center space-x-4 text-sm text-white/70">
+          <span>Generated from YouTube Video</span>
+          <span>•</span>
+          <span>Executive Summary</span>
+        </div>
+      </div>
+
+      {/* Overview */}
+      {content.overview && (
+        <section className="p-8">
+          <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border-l-4 border-green-500">
+            <h3 className="text-xl font-semibold text-green-700 dark:text-green-400 mb-4">
+              Overview
+            </h3>
+            <p className="text-green-800 dark:text-green-300">{content.overview}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Main Points */}
+      {content.mainPoints && (
+        <section className="p-8">
+          <h2 className="text-2xl font-bold text-foreground mb-6 border-b border-border pb-2">
+            Key Points
+          </h2>
+          <ul className="space-y-4">
+            {content.mainPoints.map((point: string, index: number) => (
+              <li key={index} className="flex items-start space-x-3">
+                <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold mt-1">
+                  {index + 1}
+                </span>
+                <p className="text-foreground flex-1">{point}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Detailed Summary */}
+      {content.details && (
+        <section className="p-8">
+          <h2 className="text-2xl font-bold text-foreground mb-6 border-b border-border pb-2">
+            Detailed Summary
+          </h2>
+          <div className="space-y-6">
+            {content.details.map((detail: any, index: number) => (
+              <div key={index} className="border border-border rounded-lg p-6 bg-card">
+                <h3 className="text-xl font-semibold text-foreground mb-4">{detail.topic}</h3>
+                <p className="text-muted-foreground">{detail.summary}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Conclusion */}
+      {content.conclusion && (
+        <section className="p-8">
+          <div className="bg-gray-50 dark:bg-gray-900/20 p-6 rounded-lg border-l-4 border-gray-500">
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-400 mb-4">
+              Conclusion
+            </h3>
+            <p className="text-gray-800 dark:text-gray-300 italic">{content.conclusion}</p>
+          </div>
         </section>
       )}
     </div>

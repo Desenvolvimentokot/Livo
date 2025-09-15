@@ -108,6 +108,54 @@ export default function EditorSidebar({ document }: EditorSidebarProps) {
           });
         }
         break;
+
+      case 'PRESENTATION':
+        if (content.slides) {
+          content.slides.forEach((slide: any, index: number) => {
+            structure.push({
+              id: `slide-${index}`,
+              title: `Slide ${slide.slideNumber || index + 1}: ${slide.title}`,
+              type: 'slide',
+              icon: Laptop
+            });
+          });
+        }
+        break;
+
+      case 'SUMMARY':
+        if (content.overview) {
+          structure.push({
+            id: 'overview',
+            title: 'Overview',
+            type: 'overview',
+            icon: FileText
+          });
+        }
+        if (content.mainPoints) {
+          structure.push({
+            id: 'main-points',
+            title: 'Key Points',
+            type: 'main-points',
+            icon: List
+          });
+        }
+        if (content.details) {
+          structure.push({
+            id: 'details',
+            title: 'Detailed Summary',
+            type: 'details',
+            icon: Hash
+          });
+        }
+        if (content.conclusion) {
+          structure.push({
+            id: 'conclusion',
+            title: 'Conclusion',
+            type: 'conclusion',
+            icon: FileText
+          });
+        }
+        break;
     }
 
     return structure;
@@ -142,6 +190,25 @@ export default function EditorSidebar({ document }: EditorSidebarProps) {
     if (content.steps) {
       content.steps.forEach((step: any) => {
         totalText += step.content + ' ';
+      });
+    }
+
+    if (content.slides) {
+      content.slides.forEach((slide: any) => {
+        totalText += slide.content + ' ';
+        if (slide.notes) totalText += slide.notes + ' ';
+      });
+    }
+
+    if (content.mainPoints) {
+      content.mainPoints.forEach((point: string) => {
+        totalText += point + ' ';
+      });
+    }
+
+    if (content.details) {
+      content.details.forEach((detail: any) => {
+        totalText += detail.summary + ' ';
       });
     }
 
