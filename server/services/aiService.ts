@@ -139,7 +139,7 @@ export async function structureContent(text: string, documentType: DocumentType)
       ],
       response_format: { type: "json_object" },
       temperature: 0.7,
-      max_tokens: 4000
+      max_completion_tokens: 4000
     });
     
     const responseText = completion.choices[0].message.content?.trim();
@@ -185,7 +185,7 @@ export async function generateTitle(text: string, documentType: DocumentType): P
         }
       ],
       temperature: 0.8,
-      max_tokens: 100
+      max_completion_tokens: 100
     });
     
     return completion.choices[0].message.content?.trim() || `${documentType} Document`;
