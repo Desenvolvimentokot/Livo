@@ -1,0 +1,2724 @@
+GUIA COMPLETO: VIDEO-TO-EBOOK SAAS
+Especificação Técnica Detalhada para Replit Agent
+VISÃO GERAL DO PROJETO
+O sistema funciona extraindo legendas automáticas do YouTube, processando o texto com inteligência artificial para criar estrutura, e gerando documentos profissionais. O processo é otimizado para velocidade e custo, utilizando apenas APIs de texto em vez de processamento de vídeo/áudio.
+
+ARQUITETURA DO SISTEMA
+Frontend (React + Vite)
+O frontend será uma aplicação React moderna que se comunica com o backend via API REST. A aplicação terá quatro páginas principais: landing page, dashboard de usuário, página de processamento com progresso em tempo real, e editor de documentos.
+Backend (Node.js + Express)
+O backend processará as requisições, gerenciará autenticação, extrairá legendas do YouTube, processará conteúdo com IA, e gerará documentos. Utilizará um sistema de filas para processamento assíncrono.
+Banco de Dados (PostgreSQL)
+Armazenará informações de usuários, documentos gerados, histórico de uso, e jobs de processamento.
+
+TECNOLOGIAS E DEPENDÊNCIAS ESPECÍFICAS
+Dependências do Backend
+javascript{
+  "dependencies": {
+    "express": "^4.18.2",
+    "youtube-transcript": "^1.0.6",
+    "openai": "^4.20.1",
+    "puppeteer": "^21.5.0",
+    "bull": "^4.12.0",
+    "ioredis": "^5.3.2",
+    "pg": "^8.11.0",
+    "prisma": "^5.6.0",
+    "@prisma/client": "^5.6.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "multer": "^1.4.5",
+    "uuid": "^9.0.1",
+    "dotenv": "^16.3.1",
+    "socket.io": "^4.7.4"
+  }
+}
+Dependências do Frontend
+javascript{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.18.0",
+    "axios": "^1.6.0",
+    "socket.io-client": "^4.7.4",
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
+    "react-hot-toast": "^2.4.1",
+    "framer-motion": "^10.16.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.0",
+    "vite": "^4.5.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31"
+  }
+}
+
+ESTRUTURA DE ARQUIVOS COMPLETA
+video-to-ebook/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Header.jsx
+│   │   │   ├── Hero.jsx
+│   │   │   ├── HowItWorks.jsx
+│   │   │   ├── Features.jsx
+│   │   │   ├── Pricing.jsx
+│   │   │   ├── Dashboard/
+│   │   │   │   ├── Sidebar.jsx
+│   │   │   │   ├── StatsCard.jsx
+│   │   │   │   ├── DocumentsList.jsx
+│   │   │   │   └── UsageChart.jsx
+│   │   │   ├── Processing/
+│   │   │   │   ├── ProgressBar.jsx
+│   │   │   │   ├── VideoInfo.jsx
+│   │   │   │   └── ProcessingSteps.jsx
+│   │   │   └── Editor/
+│   │   │       ├── DocumentPreview.jsx
+│   │   │       ├── EditorSidebar.jsx
+│   │   │       └── TemplateSelector.jsx
+│   │   ├── pages/
+│   │   │   ├── Home.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Processing.jsx
+│   │   │   ├── Editor.jsx
+│   │   │   ├── Login.jsx
+│   │   │   └── Register.jsx
+│   │   ├── services/
+│   │   │   ├── api.js
+│   │   │   ├── auth.js
+│   │   │   └── socket.js
+│   │   ├── hooks/
+│   │   │   ├── useAuth.js
+│   │   │   └── useSocket.js
+│   │   └── utils/
+│   │       ├── constants.js
+│   │       └── helpers.js
+│   ├── public/
+│   └── package.json
+├── backend/
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── auth.js
+│   │   │   ├── videos.js
+│   │   │   ├── documents.js
+│   │   │   └── users.js
+│   │   ├── services/
+│   │   │   ├── youtubeService.js
+│   │   │   ├── transcriptService.js
+│   │   │   ├── aiService.js
+│   │   │   ├── documentService.js
+│   │   │   └── authService.js
+│   │   ├── jobs/
+│   │   │   └── videoProcessor.js
+│   │   ├── middleware/
+│   │   │   ├── auth.js
+│   │   │   ├── rateLimit.js
+│   │   │   └── validation.js
+│   │   ├── models/
+│   │   │   └── index.js
+│   │   ├── templates/
+│   │   │   ├── ebook.html
+│   │   │   ├── tutorial.html
+│   │   │   ├── guide.html
+│   │   │   └── recipe.html
+│   │   └── utils/
+│   │       ├── fileUtils.js
+│   │       └── validation.js
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   └── package.json
+└── README.md
+
+BANCO DE DADOS (PRISMA SCHEMA)
+prisma// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  passwordHash String   @map("password_hash")
+  name        String?
+  plan        Plan      @default(FREE)
+  hoursUsed   Float     @default(0) @map("hours_used")
+  hoursLimit  Float     @default(0.5) @map("hours_limit")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  documents   Document[]
+  jobs        Job[]
+  
+  @@map("users")
+}
+
+model Document {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @map("user_id")
+  youtubeUrl    String        @map("youtube_url")
+  videoTitle    String?       @map("video_title")
+  videoDuration Int?          @map("video_duration") // em segundos
+  documentType  DocumentType  @map("document_type")
+  content       Json?
+  status        ProcessStatus @default(PROCESSING)
+  filePath      String?       @map("file_path")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  
+  user          User          @relation(fields: [userId], references: [id])
+  jobs          Job[]
+  
+  @@map("documents")
+}
+
+model Job {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @map("user_id")
+  documentId    Int           @map("document_id")
+  status        JobStatus     @default(PENDING)
+  progress      Int           @default(0)
+  currentStep   String?       @map("current_step")
+  errorMessage  String?       @map("error_message")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  
+  user          User          @relation(fields: [userId], references: [id])
+  document      Document      @relation(fields: [documentId], references: [id])
+  
+  @@map("jobs")
+}
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum DocumentType {
+  EBOOK
+  TUTORIAL
+  GUIDE
+  RECIPE
+  PRESENTATION
+  SUMMARY
+}
+
+enum ProcessStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+SERVIÇOS DO BACKEND DETALHADOS
+YouTube Service (youtubeService.js)
+javascriptconst { YoutubeTranscript } = require('youtube-transcript');
+
+/**
+ * Extrai o ID do vídeo de URLs do YouTube
+ * Suporta formatos: youtube.com/watch?v=ID, youtu.be/ID, m.youtube.com/watch?v=ID
+ */
+function extractVideoId(url) {
+  const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|m\.youtube\.com\/watch\?v=)([^&\n?#]+)/;
+  const match = url.match(regex);
+  
+  if (!match) {
+    throw new Error('URL do YouTube inválida');
+  }
+  
+  return match[1];
+}
+
+/**
+ * Busca informações básicas do vídeo
+ * Retorna título, duração estimada e thumbnail
+ */
+async function getVideoInfo(videoId) {
+  try {
+    // Primeira tentativa: buscar transcrição para validar se o vídeo existe
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+      lang: 'pt',
+      country: 'BR'
+    });
+    
+    // Calcula duração baseada no último timestamp da transcrição
+    const lastItem = transcript[transcript.length - 1];
+    const estimatedDuration = Math.round(lastItem.offset + lastItem.duration);
+    
+    return {
+      videoId,
+      duration: estimatedDuration,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+      transcriptLength: transcript.length
+    };
+  } catch (error) {
+    if (error.message.includes('Could not retrieve a transcript')) {
+      throw new Error('Este vídeo não possui legendas disponíveis');
+    }
+    throw new Error('Não foi possível acessar o vídeo. Verifique se é público e tem legendas.');
+  }
+}
+
+/**
+ * Extrai legendas completas do vídeo
+ * Prioriza português, fallback para inglês se necessário
+ */
+async function extractTranscript(videoId) {
+  try {
+    // Primeira tentativa: português
+    let transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+      lang: 'pt',
+      country: 'BR'
+    });
+    
+    return transcript;
+  } catch (error) {
+    try {
+      // Segunda tentativa: inglês
+      transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+        lang: 'en',
+        country: 'US'
+      });
+      
+      return transcript;
+    } catch (error2) {
+      throw new Error('Não foi possível extrair legendas deste vídeo');
+    }
+  }
+}
+
+/**
+ * Converte array de transcrição em texto corrido
+ * Remove marcadores de música, aplausos, etc.
+ */
+function transcriptToText(transcript) {
+  return transcript
+    .map(item => item.text)
+    .join(' ')
+    .replace(/\[Música\]/gi, '')
+    .replace(/\[Aplausos\]/gi, '')
+    .replace(/\[Risos\]/gi, '')
+    .replace(/\[Silêncio\]/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+module.exports = {
+  extractVideoId,
+  getVideoInfo,
+  extractTranscript,
+  transcriptToText
+};
+AI Service (aiService.js)
+javascriptconst OpenAI = require('openai');
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+/**
+ * Prompts específicos para cada tipo de documento
+ * Cada prompt é otimizado para gerar estrutura adequada
+ */
+const DOCUMENT_PROMPTS = {
+  EBOOK: `Você é um especialista em criar ebooks profissionais. Analise esta transcrição de vídeo e transforme em um ebook bem estruturado.
+
+Retorne um JSON com esta estrutura EXATA:
+{
+  "title": "Título principal do ebook",
+  "subtitle": "Subtítulo descritivo",
+  "introduction": "Introdução engajante de 2-3 parágrafos",
+  "chapters": [
+    {
+      "title": "Título do capítulo",
+      "content": "Conteúdo do capítulo em parágrafos"
+    }
+  ],
+  "conclusion": "Conclusão de 2-3 parágrafos",
+  "keyTakeaways": ["Ponto importante 1", "Ponto importante 2"]
+}`,
+
+  TUTORIAL: `Você é um especialista em criar tutoriais passo-a-passo. Analise esta transcrição e transforme em um tutorial prático.
+
+Retorne um JSON com esta estrutura EXATA:
+{
+  "title": "Título do tutorial",
+  "description": "Descrição do que será ensinado",
+  "materials": ["Material 1", "Material 2"],
+  "steps": [
+    {
+      "stepNumber": 1,
+      "title": "Nome do passo",
+      "content": "Instruções detalhadas",
+      "tips": "Dicas extras (opcional)"
+    }
+  ],
+  "troubleshooting": "Soluções para problemas comuns",
+  "finalTips": "Dicas finais"
+}`,
+
+  GUIDE: `Você é um especialista em criar guias práticos. Analise esta transcrição e transforme em um guia organizado.
+
+Retorne um JSON com esta estrutura EXATA:
+{
+  "title": "Título do guia",
+  "overview": "Visão geral do guia",
+  "sections": [
+    {
+      "title": "Título da seção",
+      "content": "Conteúdo da seção"
+    }
+  ],
+  "checklist": ["Item de verificação 1", "Item 2"],
+  "resources": "Recursos adicionais"
+}`
+};
+
+/**
+ * Processa texto com IA para gerar conteúdo estruturado
+ * Usa GPT-4o-mini para custo otimizado
+ */
+async function structureContent(text, documentType) {
+  const prompt = DOCUMENT_PROMPTS[documentType];
+  
+  if (!prompt) {
+    throw new Error(`Tipo de documento não suportado: ${documentType}`);
+  }
+  
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: prompt
+        },
+        {
+          role: "user",
+          content: `Transcrição do vídeo:\n\n${text}\n\nIMPORTANTE: Retorne APENAS o JSON, sem texto adicional.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    });
+    
+    const responseText = completion.choices[0].message.content.trim();
+    
+    // Remove qualquer texto antes/depois do JSON
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('IA não retornou JSON válido');
+    }
+    
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error('Erro ao processar resposta da IA. Tente novamente.');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Gera título inteligente baseado no conteúdo
+ * Usado quando o vídeo não tem título claro
+ */
+async function generateTitle(text, documentType) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `Gere um título atrativo e profissional para um ${documentType.toLowerCase()} baseado neste conteúdo. Retorne apenas o título, sem aspas ou formatação extra.`
+      },
+      {
+        role: "user",
+        content: text.substring(0, 1000) // Primeiros 1000 caracteres
+      }
+    ],
+    temperature: 0.8,
+    max_tokens: 100
+  });
+  
+  return completion.choices[0].message.content.trim();
+}
+
+module.exports = {
+  structureContent,
+  generateTitle,
+  DOCUMENT_PROMPTS
+};
+Document Service (documentService.js)
+javascriptconst puppeteer = require('puppeteer');
+const fs = require('fs').promises;
+const path = require('path');
+
+/**
+ * Templates HTML para diferentes tipos de documentos
+ * Cada template é otimizado visualmente para seu propósito
+ */
+async function loadTemplate(documentType) {
+  const templatePath = path.join(__dirname, '../templates', `${documentType.toLowerCase()}.html`);
+  return await fs.readFile(templatePath, 'utf8');
+}
+
+/**
+ * Processa template HTML substituindo placeholders
+ * Usa sintaxe {{variavel}} para substituições
+ */
+function processTemplate(templateHtml, data) {
+  let processedHtml = templateHtml;
+  
+  // Substituições básicas
+  processedHtml = processedHtml.replace(/\{\{title\}\}/g, data.title || 'Documento sem título');
+  processedHtml = processedHtml.replace(/\{\{subtitle\}\}/g, data.subtitle || '');
+  
+  // Processamento específico por tipo
+  if (data.chapters) {
+    // Ebook
+    const chaptersHtml = data.chapters.map((chapter, index) => `
+      <div class="chapter">
+        <h2>Capítulo ${index + 1}: ${chapter.title}</h2>
+        <div class="chapter-content">${chapter.content.replace(/\n/g, '</p><p>')}</div>
+      </div>
+    `).join('');
+    processedHtml = processedHtml.replace(/\{\{chapters\}\}/g, chaptersHtml);
+    
+    processedHtml = processedHtml.replace(/\{\{introduction\}\}/g, data.introduction || '');
+    processedHtml = processedHtml.replace(/\{\{conclusion\}\}/g, data.conclusion || '');
+    
+    if (data.keyTakeaways) {
+      const takeawaysHtml = data.keyTakeaways.map(item => `<li>${item}</li>`).join('');
+      processedHtml = processedHtml.replace(/\{\{keyTakeaways\}\}/g, `<ul>${takeawaysHtml}</ul>`);
+    }
+  }
+  
+  if (data.steps) {
+    // Tutorial
+    const stepsHtml = data.steps.map(step => `
+      <div class="step">
+        <h3>Passo ${step.stepNumber}: ${step.title}</h3>
+        <div class="step-content">${step.content}</div>
+        ${step.tips ? `<div class="step-tips"><strong>Dica:</strong> ${step.tips}</div>` : ''}
+      </div>
+    `).join('');
+    processedHtml = processedHtml.replace(/\{\{steps\}\}/g, stepsHtml);
+    
+    if (data.materials) {
+      const materialsHtml = data.materials.map(item => `<li>${item}</li>`).join('');
+      processedHtml = processedHtml.replace(/\{\{materials\}\}/g, `<ul>${materialsHtml}</ul>`);
+    }
+  }
+  
+  if (data.sections) {
+    // Guide
+    const sectionsHtml = data.sections.map(section => `
+      <div class="section">
+        <h2>${section.title}</h2>
+        <div class="section-content">${section.content.replace(/\n/g, '</p><p>')}</div>
+      </div>
+    `).join('');
+    processedHtml = processedHtml.replace(/\{\{sections\}\}/g, sectionsHtml);
+  }
+  
+  return processedHtml;
+}
+
+/**
+ * Gera PDF usando Puppeteer
+ * Configurado para qualidade profissional
+ */
+async function generatePDF(htmlContent, options = {}) {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ]
+  });
+  
+  try {
+    const page = await browser.newPage();
+    
+    // Configurações da página
+    await page.setContent(htmlContent, {
+      waitUntil: 'networkidle0'
+    });
+    
+    // Gera PDF com configurações otimizadas
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: {
+        top: '1in',
+        right: '0.8in',
+        bottom: '1in',
+        left: '0.8in'
+      },
+      printBackground: true,
+      preferCSSPageSize: true,
+      ...options
+    });
+    
+    return pdfBuffer;
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Função principal para gerar documento completo
+ * Orquestra todo o processo de geração
+ */
+async function generateDocument(structuredData, documentType, options = {}) {
+  try {
+    // 1. Carrega template apropriado
+    const templateHtml = await loadTemplate(documentType);
+    
+    // 2. Processa template com dados
+    const processedHtml = processTemplate(templateHtml, structuredData);
+    
+    // 3. Gera PDF
+    const pdfBuffer = await generatePDF(processedHtml, options);
+    
+    return {
+      success: true,
+      buffer: pdfBuffer,
+      size: pdfBuffer.length
+    };
+  } catch (error) {
+    throw new Error(`Erro ao gerar documento: ${error.message}`);
+  }
+}
+
+module.exports = {
+  generateDocument,
+  generatePDF,
+  loadTemplate,
+  processTemplate
+};
+
+SISTEMA DE FILAS (jobs/videoProcessor.js)
+javascriptconst Queue = require('bull');
+const { PrismaClient } = require('@prisma/client');
+const youtubeService = require('../services/youtubeService');
+const aiService = require('../services/aiService');
+const documentService = require('../services/documentService');
+const fs = require('fs').promises;
+const path = require('path');
+
+const prisma = new PrismaClient();
+
+// Configuração da fila Redis
+const videoQueue = new Queue('video processing', {
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD
+  },
+  defaultJobOptions: {
+    removeOnComplete: 10,
+    removeOnFail: 5,
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 2000
+    }
+  }
+});
+
+/**
+ * Atualiza progresso do job no banco e emite via Socket.IO
+ */
+async function updateJobProgress(jobId, progress, currentStep, error = null) {
+  await prisma.job.update({
+    where: { id: jobId },
+    data: {
+      progress,
+      currentStep,
+      errorMessage: error,
+      status: error ? 'FAILED' : (progress === 100 ? 'COMPLETED' : 'PROCESSING')
+    }
+  });
+  
+  // Emite progresso via Socket.IO para frontend
+  const io = require('../server').io;
+  io.to(`job_${jobId}`).emit('progress', {
+    jobId,
+    progress,
+    currentStep,
+    error
+  });
+}
+
+/**
+ * Processador principal de vídeos
+ * Executa todo o pipeline de forma assíncrona
+ */
+videoQueue.process('process-video', 3, async (job) => {
+  const { youtubeUrl, documentType, userId, documentId, jobId } = job.data;
+  
+  try {
+    // 1. Extrair ID do vídeo e validar
+    await updateJobProgress(jobId, 10, 'Analisando vídeo do YouTube...');
+    const videoId = youtubeService.extractVideoId(youtubeUrl);
+    const videoInfo = await youtubeService.getVideoInfo(videoId);
+    
+    // Verifica se usuário tem horas suficientes
+    const durationHours = videoInfo.duration / 3600;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    
+    if (user.hoursUsed + durationHours > user.hoursLimit) {
+      throw new Error('Limite de horas excedido para seu plano atual');
+    }
+    
+    // 2. Extrair transcrição
+    await updateJobProgress(jobId, 30, 'Extraindo legendas do vídeo...');
+    const transcript = await youtubeService.extractTranscript(videoId);
+    const fullText = youtubeService.transcriptToText(transcript);
+    
+    if (fullText.length < 100) {
+      throw new Error('Vídeo muito curto ou sem conteúdo suficiente para processar');
+    }
+    
+    // 3. Processar com IA
+    await updateJobProgress(jobId, 60, 'Estruturando conteúdo com IA...');
+    const structuredContent = await aiService.structureContent(fullText, documentType);
+    
+    // 4. Gerar documento PDF
+    await updateJobProgress(jobId, 80, 'Gerando documento PDF...');
+    const document = await documentService.generateDocument(structuredContent, documentType);
+    
+    // 5. Salvar arquivo
+    await updateJobProgress(jobId, 90, 'Salvando documento...');
+    const fileName = `document_${documentId}_${Date.now()}.pdf`;
+    const filePath = path.join(process.env.UPLOADS_DIR || './uploads', fileName);
+    
+    await fs.writeFile(filePath, document.buffer);
+    
+    // 6. Atualizar banco de dados
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        content: structuredContent,
+        filePath,
+        status: 'COMPLETED',
+        videoTitle: structuredContent.title,
+        videoDuration: videoInfo.duration
+      }
+    });
+    
+    // Atualizar uso de horas do usuário
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        hoursUsed: {
+          increment: durationHours
+        }
+      }
+    });
+    
+    // 7. Finalizar job
+    await updateJobProgress(jobId, 100, 'Documento criado com sucesso!');
+    
+    return {
+      success: true,
+      documentId,
+      filePath,
+      fileSize: document.size
+    };
+    
+  } catch (error) {
+    console.error('Erro no processamento:', error);
+    
+    // Atualizar documento como falho
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { status: 'FAILED' }
+    });
+    
+    // Atualizar job como falho
+    await updateJobProgress(jobId, 0, 'Erro no processamento', error.message);
+    
+    throw error;
+  }
+});
+
+/**
+ * Adiciona novo job à fila
+ */
+async function addVideoProcessingJob(data) {
+  const job = await videoQueue.add('process-video', data, {
+    priority: data.userPlan === 'BUSINESS' ? 1 : (data.userPlan === 'PRO' ? 2 : 3),
+    delay: 0
+  });
+  
+  return job.id;
+}
+
+/**
+ * Obtém estatísticas da fila
+ */
+async function getQueueStats() {
+  const waiting = await videoQueue.getWaiting();
+  const active = await videoQueue.getActive();
+  const completed = await videoQueue.getCompleted();
+  const failed = await videoQueue.getFailed();
+  
+  return {
+    waiting: waiting.length,
+    active: active.length,
+    completed: completed.length,
+    failed: failed.length
+  };
+}
+
+module.exports = {
+  videoQueue,
+  addVideoProcessingJob,
+  getQueueStats
+};
+
+ROTAS DA API DETALHADAS
+Rota Principal - Videos (routes/videos.js)
+javascriptconst express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { addVideoProcessingJob } = require('../jobs/videoProcessor');
+const { requireAuth } = require('../middleware/auth');
+const youtubeService = require('../services/youtubeService');
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+/**
+ * POST /api/videos/process
+ * Inicia processamento de um novo vídeo
+ */
+router.post('/process', requireAuth, async (req, res) => {
+  try {
+    const { youtubeUrl, documentType } = req.body;
+    const userId = req.user.id;
+    
+    // Validações
+    if (!youtubeUrl || !documentType) {
+      return res.status(400).json({
+        error: 'URL do YouTube e tipo de documento são obrigatórios'
+      });
+    }
+    
+    const validTypes = ['Tentar novamenteClaude ainda não tem a capacidade de executar o código que gera.GContinuarEditarjavascriptconst validTypes = ['EBOOK', 'TUTORIAL', 'GUIDE', 'RECIPE', 'PRESENTATION', 'SUMMARY'];
+    if (!validTypes.includes(documentType)) {
+      return res.status(400).json({
+        error: 'Tipo de documento inválido'
+      });
+    }
+    
+    // Extrair e validar vídeo
+    const videoId = youtubeService.extractVideoId(youtubeUrl);
+    const videoInfo = await youtubeService.getVideoInfo(videoId);
+    
+    // Verificar limite de horas do usuário
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const durationHours = videoInfo.duration / 3600;
+    
+    if (user.hoursUsed + durationHours > user.hoursLimit) {
+      return res.status(403).json({
+        error: 'Limite de horas excedido',
+        hoursNeeded: durationHours,
+        hoursAvailable: user.hoursLimit - user.hoursUsed
+      });
+    }
+    
+    // Criar documento no banco
+    const document = await prisma.document.create({
+      data: {
+        userId,
+        youtubeUrl,
+        documentType,
+        status: 'PROCESSING'
+      }
+    });
+    
+    // Criar job de processamento
+    const job = await prisma.job.create({
+      data: {
+        userId,
+        documentId: document.id,
+        status: 'PENDING'
+      }
+    });
+    
+    // Adicionar à fila
+    await addVideoProcessingJob({
+      youtubeUrl,
+      documentType,
+      userId,
+      documentId: document.id,
+      jobId: job.id,
+      userPlan: user.plan
+    });
+    
+    res.json({
+      success: true,
+      documentId: document.id,
+      jobId: job.id,
+      estimatedDuration: videoInfo.duration,
+      processingTime: Math.max(60, videoInfo.duration / 60) // Estimativa em segundos
+    });
+    
+  } catch (error) {
+    console.error('Erro no processamento:', error);
+    res.status(400).json({
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/videos/progress/:jobId
+ * Retorna progresso atual do processamento
+ */
+router.get('/progress/:jobId', requireAuth, async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const userId = req.user.id;
+    
+    const job = await prisma.job.findFirst({
+      where: {
+        id: parseInt(jobId),
+        userId
+      },
+      include: {
+        document: true
+      }
+    });
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job não encontrado' });
+    }
+    
+    res.json({
+      jobId: job.id,
+      status: job.status,
+      progress: job.progress,
+      currentStep: job.currentStep,
+      errorMessage: job.errorMessage,
+      document: job.document
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/videos/info
+ * Retorna informações básicas de um vídeo sem processar
+ */
+router.post('/info', requireAuth, async (req, res) => {
+  try {
+    const { youtubeUrl } = req.body;
+    
+    if (!youtubeUrl) {
+      return res.status(400).json({ error: 'URL é obrigatória' });
+    }
+    
+    const videoId = youtubeService.extractVideoId(youtubeUrl);
+    const videoInfo = await youtubeService.getVideoInfo(videoId);
+    
+    const durationHours = videoInfo.duration / 3600;
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    
+    res.json({
+      videoId,
+      duration: videoInfo.duration,
+      durationFormatted: formatDuration(videoInfo.duration),
+      thumbnail: videoInfo.thumbnail,
+      hoursNeeded: Math.round(durationHours * 100) / 100,
+      canProcess: user.hoursUsed + durationHours <= user.hoursLimit,
+      hoursAvailable: user.hoursLimit - user.hoursUsed
+    });
+    
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+function formatDuration(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${secs}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+}
+
+module.exports = router;
+Rota de Documentos (routes/documents.js)
+javascriptconst express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('../middleware/auth');
+const fs = require('fs').promises;
+const path = require('path');
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+/**
+ * GET /api/documents
+ * Lista todos os documentos do usuário
+ */
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 10, status, type } = req.query;
+    
+    const where = { userId };
+    if (status) where.status = status;
+    if (type) where.documentType = type;
+    
+    const documents = await prisma.document.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: parseInt(limit),
+      include: {
+        jobs: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+    
+    const total = await prisma.document.count({ where });
+    
+    res.json({
+      documents: documents.map(doc => ({
+        id: doc.id,
+        youtubeUrl: doc.youtubeUrl,
+        videoTitle: doc.videoTitle,
+        documentType: doc.documentType,
+        status: doc.status,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        fileSize: doc.filePath ? 'Disponível' : null,
+        lastJob: doc.jobs[0] || null
+      })),
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/documents/:id
+ * Retorna um documento específico
+ */
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    const document = await prisma.document.findFirst({
+      where: {
+        id: parseInt(id),
+        userId
+      },
+      include: {
+        jobs: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+    
+    if (!document) {
+      return res.status(404).json({ error: 'Documento não encontrado' });
+    }
+    
+    res.json(document);
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/documents/:id
+ * Atualiza conteúdo de um documento
+ */
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { content, videoTitle } = req.body;
+    
+    const document = await prisma.document.findFirst({
+      where: {
+        id: parseInt(id),
+        userId
+      }
+    });
+    
+    if (!document) {
+      return res.status(404).json({ error: 'Documento não encontrado' });
+    }
+    
+    if (document.status !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Documento ainda não foi processado' });
+    }
+    
+    const updatedDocument = await prisma.document.update({
+      where: { id: parseInt(id) },
+      data: {
+        content,
+        videoTitle,
+        updatedAt: new Date()
+      }
+    });
+    
+    res.json(updatedDocument);
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/documents/:id/export
+ * Exporta documento em diferentes formatos
+ */
+router.post('/:id/export', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { format = 'pdf', regenerate = false } = req.body;
+    
+    const document = await prisma.document.findFirst({
+      where: {
+        id: parseInt(id),
+        userId
+      }
+    });
+    
+    if (!document || document.status !== 'COMPLETED') {
+      return res.status(404).json({ error: 'Documento não encontrado ou não processado' });
+    }
+    
+    // Se regenerar ou não existe arquivo
+    if (regenerate || !document.filePath) {
+      const documentService = require('../services/documentService');
+      const newDocument = await documentService.generateDocument(
+        document.content,
+        document.documentType
+      );
+      
+      const fileName = `document_${id}_${Date.now()}.pdf`;
+      const filePath = path.join(process.env.UPLOADS_DIR || './uploads', fileName);
+      
+      await fs.writeFile(filePath, newDocument.buffer);
+      
+      await prisma.document.update({
+        where: { id: parseInt(id) },
+        data: { filePath }
+      });
+      
+      document.filePath = filePath;
+    }
+    
+    // Verificar se arquivo existe
+    try {
+      await fs.access(document.filePath);
+    } catch {
+      return res.status(404).json({ error: 'Arquivo não encontrado' });
+    }
+    
+    const fileName = `${document.videoTitle || 'documento'}.pdf`;
+    
+    res.download(document.filePath, fileName, (error) => {
+      if (error) {
+        console.error('Erro no download:', error);
+        res.status(500).json({ error: 'Erro ao baixar arquivo' });
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/documents/:id
+ * Deleta um documento
+ */
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    const document = await prisma.document.findFirst({
+      where: {
+        id: parseInt(id),
+        userId
+      }
+    });
+    
+    if (!document) {
+      return res.status(404).json({ error: 'Documento não encontrado' });
+    }
+    
+    // Deletar arquivo físico se existir
+    if (document.filePath) {
+      try {
+        await fs.unlink(document.filePath);
+      } catch (error) {
+        console.log('Arquivo já foi deletado ou não existe:', error.message);
+      }
+    }
+    
+    // Deletar jobs relacionados
+    await prisma.job.deleteMany({
+      where: { documentId: parseInt(id) }
+    });
+    
+    // Deletar documento
+    await prisma.document.delete({
+      where: { id: parseInt(id) }
+    });
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
+
+TEMPLATES HTML COMPLETOS
+Template Ebook (templates/ebook.html)
+html<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        @page {
+            margin: 1.5in 1in 1in 1in;
+            @top-center {
+                content: "{{title}}";
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 10px;
+                color: #666;
+            }
+            @bottom-center {
+                content: counter(page);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 10px;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+        }
+        
+        .cover-page {
+            text-align: center;
+            padding: 4in 0;
+            page-break-after: always;
+        }
+        
+        .main-title {
+            font-size: 2.8em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5em;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            font-size: 1.4em;
+            color: #7f8c8d;
+            margin-bottom: 2em;
+            font-weight: 300;
+        }
+        
+        .divider {
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            margin: 2em auto;
+            border-radius: 2px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin: 2em 0 1em 0;
+            page-break-after: avoid;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.3em;
+        }
+        
+        h2 {
+            color: #34495e;
+            font-size: 1.6em;
+            margin: 1.8em 0 1em 0;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            color: #7f8c8d;
+            font-size: 1.3em;
+            margin: 1.4em 0 0.8em 0;
+            page-break-after: avoid;
+        }
+        
+        p {
+            margin: 0 0 1.2em 0;
+            text-align: justify;
+            orphans: 2;
+            widows: 2;
+        }
+        
+        .introduction {
+            background: #f8f9fa;
+            padding: 2em;
+            border-left: 5px solid #3498db;
+            margin: 2em 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .chapter {
+            margin: 3em 0;
+            page-break-inside: avoid;
+        }
+        
+        .chapter-title {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 1em;
+            padding: 0.5em 0;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .chapter-content {
+            margin-left: 0;
+        }
+        
+        .conclusion {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2.5em;
+            border-radius: 12px;
+            margin-top: 3em;
+            page-break-inside: avoid;
+        }
+        
+        .conclusion h2 {
+            color: white;
+            margin-top: 0;
+        }
+        
+        .key-takeaways {
+            background: #e8f5e8;
+            padding: 2em;
+            border-radius: 10px;
+            margin: 2em 0;
+            border: 1px solid #2ecc71;
+        }
+        
+        .key-takeaways h3 {
+            color: #27ae60;
+            margin-top: 0;
+            font-size: 1.4em;
+        }
+        
+        .key-takeaways ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .key-takeaways li {
+            margin: 1em 0;
+            padding-left: 2em;
+            position: relative;
+        }
+        
+        .key-takeaways li:before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .footer-note {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 4em;
+            padding-top: 2em;
+            border-top: 1px solid #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="cover-page">
+        <h1 class="main-title">{{title}}</h1>
+        <div class="subtitle">{{subtitle}}</div>
+        <div class="divider"></div>
+        <p style="color: #7f8c8d; margin-top: 3em;">Documento gerado automaticamente</p>
+    </div>
+    
+    <div class="introduction">
+        <h2>Introdução</h2>
+        {{introduction}}
+    </div>
+    
+    {{chapters}}
+    
+    <div class="conclusion">
+        <h2>Conclusão</h2>
+        {{conclusion}}
+    </div>
+    
+    <div class="key-takeaways">
+        <h3>Pontos-Chave</h3>
+        {{keyTakeaways}}
+    </div>
+    
+    <div class="footer-note">
+        <p>Este documento foi gerado automaticamente a partir de conteúdo em vídeo.</p>
+    </div>
+</body>
+</html>
+Template Tutorial (templates/tutorial.html)
+html<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        @page {
+            margin: 1in;
+            @top-center {
+                content: "{{title}}";
+                font-family: Arial, sans-serif;
+                font-size: 9px;
+                color: #666;
+            }
+            @bottom-center {
+                content: "Página " counter(page);
+                font-family: Arial, sans-serif;
+                font-size: 9px;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            font-size: 11px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2em;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 2em;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .description {
+            background: #f8f9fa;
+            padding: 1.5em;
+            border-radius: 8px;
+            margin: 2em 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .materials-section {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 1.5em;
+            margin: 2em 0;
+        }
+        
+        .materials-section h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        
+        .step {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin: 2em 0;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            page-break-inside: avoid;
+        }
+        
+        .step-header {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            color: white;
+            padding: 1em 1.5em;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .step-content {
+            padding: 1.5em;
+        }
+        
+        .step-tips {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 1em;
+            margin-top: 1em;
+            color: #155724;
+        }
+        
+        .troubleshooting {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 2em;
+            margin: 3em 0;
+            color: #721c24;
+        }
+        
+        .troubleshooting h3 {
+            color: #721c24;
+            margin-top: 0;
+        }
+        
+        .final-tips {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 2em;
+            margin: 3em 0;
+            color: #0c5460;
+        }
+        
+        ul, ol {
+            padding-left: 1.5em;
+        }
+        
+        li {
+            margin: 0.5em 0;
+        }
+        
+        h2, h3 {
+            page-break-after: avoid;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 1em;
+            margin: 1em 0;
+            color: #856404;
+        }
+        
+        .warning:before {
+            content: "⚠️ ";
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{title}}</h1>
+    </div>
+    
+    <div class="description">
+        <h3>Sobre este Tutorial</h3>
+        {{description}}
+    </div>
+    
+    <div class="materials-section">
+        <h3>🛠️ Materiais Necessários</h3>
+        {{materials}}
+    </div>
+    
+    <div class="steps-section">
+        <h2>📋 Passo a Passo</h2>
+        {{steps}}
+    </div>
+    
+    <div class="troubleshooting">
+        <h3>🔧 Resolução de Problemas</h3>
+        {{troubleshooting}}
+    </div>
+    
+    <div class="final-tips">
+        <h3>💡 Dicas Finais</h3>
+        {{finalTips}}
+    </div>
+</body>
+</html>
+
+VARIÁVEIS DE AMBIENTE (.env)
+env# Ambiente
+NODE_ENV=production
+PORT=3000
+
+# Banco de dados
+DATABASE_URL="postgresql://username:password@localhost:5432/videotoebook"
+
+# JWT
+JWT_SECRET="seu_jwt_secret_super_seguro_aqui"
+
+# OpenAI
+OPENAI_API_KEY="sk-seu_openai_api_key_aqui"
+
+# Redis (para filas)
+REDIS_HOST="localhost"
+REDIS_PORT="6379"
+REDIS_PASSWORD=""
+
+# Uploads
+UPLOADS_DIR="./uploads"
+
+# Limites
+MAX_VIDEO_DURATION=14400
+MAX_FILE_SIZE=50000000
+
+# Rate limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# CORS
+CORS_ORIGIN="http://localhost:5173,https://yourdomain.com"
+
+CONFIGURAÇÃO DO SERVIDOR PRINCIPAL (server.js)
+javascriptconst express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+require('dotenv').config();
+
+// Importar rotas
+const authRoutes = require('./src/routes/auth');
+const videoRoutes = require('./src/routes/videos');
+const documentRoutes = require('./src/routes/documents');
+const userRoutes = require('./src/routes/users');
+
+const app = express();
+const server = createServer(app);
+
+// Configurar Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:5173"],
+    credentials: true
+  }
+});
+
+// Middleware de segurança
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
+
+// CORS
+app.use(cors({
+  origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:5173"],
+  credentials: true
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  message: {
+    error: 'Muitas requisições, tente novamente em alguns minutos.'
+  }
+});
+app.use('/api', limiter);
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Servir arquivos estáticos
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Socket.IO para progresso em tempo real
+io.on('connection', (socket) => {
+  console.log('Cliente conectado:', socket.id);
+  
+  socket.on('join-job', (jobId) => {
+    socket.join(`job_${jobId}`);
+    console.log(`Cliente ${socket.id} entrou no job ${jobId}`);
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('Cliente desconectado:', socket.id);
+  });
+});
+
+// Disponibilizar io para outros módulos
+app.io = io;
+module.exports.io = io;
+
+// Rotas da API
+app.use('/api/auth', authRoutes);
+app.use('/api/videos', videoRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/users', userRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+// Servir frontend em produção
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+}
+
+// Middleware de tratamento de erros
+app.use((error, req, res, next) => {
+  console.error('Erro no servidor:', error);
+  
+  res.status(error.status || 500).json({
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Erro interno do servidor' 
+      : error.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: error.stack })
+  });
+});
+
+// 404 para rotas não encontradas
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Rota não encontrada'
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`📊 Dashboard: http://localhost:${PORT}`);
+  console.log(`🔗 API: http://localhost:${PORT}/api`);
+});
+
+// Tratamento de erros não capturados
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+module.exports = app;
+
+FRONTEND - COMPONENTES PRINCIPAIS
+Componente Hero (frontend/src/components/Hero.jsx)
+jsximport { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import toast from 'react-hot-toast';
+
+export default function Hero() {
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!youtubeUrl.trim()) {
+      toast.error('Por favor, insira uma URL do YouTube');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Primeiro, obter informações do vídeo
+      const { data: videoInfo } = await api.post('/api/videos/info', {
+        youtubeUrl: youtubeUrl.trim()
+      });
+
+      // Redirecionar para dashboard com os dados do vídeo
+      navigate('/dashboard', { 
+        state: { 
+          videoInfo: { 
+            ...videoInfo, 
+            youtubeUrl: youtubeUrl.trim() 
+          } 
+        } 
+      });
+
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao processar vídeo');Tentar novamenteClaude ainda não tem a capacidade de executar o código que gera.GContinuarEditarjsx    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <div className="absolute inset-0 bg-black opacity-50"></div>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Transforme Vídeos do YouTube em
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+              {' '}Documentos Profissionais
+            </span>
+          </h1>
+          
+          <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
+            Converta qualquer vídeo em ebooks estruturados, guias práticos ou tutoriais 
+            profissionais em menos de 1 minuto usando inteligência artificial.
+          </p>
+
+          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <input
+                type="url"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="Cole aqui a URL do YouTube (ex: https://youtube.com/watch?v=...)"
+                className="flex-1 px-6 py-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[200px]"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analisando...
+                  </>
+                ) : (
+                  'Gerar Documento'
+                )}
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-8 flex justify-center items-center space-x-8 text-gray-400">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Grátis para testar
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              Resultados em segundos
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Qualidade profissional
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+Dashboard Principal (frontend/src/pages/Dashboard.jsx)
+jsximport { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
+
+export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showNewDocumentModal, setShowNewDocumentModal] = useState(false);
+  const [selectedDocumentType, setSelectedDocumentType] = useState('EBOOK');
+  
+  // Dados do vídeo vindos da página inicial
+  const videoInfo = location.state?.videoInfo;
+
+  useEffect(() => {
+    if (videoInfo && !authLoading) {
+      if (!user) {
+        // Usuário não logado, redirecionar para login
+        navigate('/login', { 
+          state: { 
+            returnTo: '/dashboard', 
+            videoInfo 
+          } 
+        });
+        return;
+      }
+      setShowNewDocumentModal(true);
+    }
+    
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user, authLoading, videoInfo]);
+
+  const fetchDocuments = async () => {
+    try {
+      const { data } = await api.get('/api/documents');
+      setDocuments(data.documents);
+    } catch (error) {
+      toast.error('Erro ao carregar documentos');
+    }
+  };
+
+  const handleCreateDocument = async () => {
+    if (!videoInfo) return;
+
+    setLoading(true);
+    setShowNewDocumentModal(false);
+
+    try {
+      const { data } = await api.post('/api/videos/process', {
+        youtubeUrl: videoInfo.youtubeUrl,
+        documentType: selectedDocumentType
+      });
+
+      toast.success('Processamento iniciado!');
+      
+      // Redirecionar para página de progresso
+      navigate(`/processing/${data.jobId}`, {
+        state: {
+          documentId: data.documentId,
+          videoInfo,
+          documentType: selectedDocumentType
+        }
+      });
+
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao iniciar processamento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (authLoading) {
+    return <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Será redirecionado
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600 mt-2">
+          Bem-vindo de volta, {user.name || user.email}!
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Documentos Criados
+          </h3>
+          <p className="text-3xl font-bold text-blue-600">
+            {documents.length}
+          </p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Horas Usadas
+          </h3>
+          <p className="text-3xl font-bold text-purple-600">
+            {user.hoursUsed.toFixed(1)}h
+          </p>
+          <p className="text-sm text-gray-500">
+            de {user.hoursLimit}h disponíveis
+          </p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Plano Atual
+          </h3>
+          <p className="text-xl font-bold text-green-600 capitalize">
+            {user.plan.toLowerCase()}
+          </p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white p-6 rounded-lg shadow mb-8">
+        <h2 className="text-xl font-semibold mb-4">Ações Rápidas</h2>
+        <button
+          onClick={() => setShowNewDocumentModal(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Novo Documento
+        </button>
+      </div>
+
+      {/* Documents List */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold">Meus Documentos</h2>
+        </div>
+        
+        <div className="divide-y divide-gray-200">
+          {documents.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <p className="text-lg">Nenhum documento criado ainda</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Cole uma URL do YouTube para começar
+              </p>
+            </div>
+          ) : (
+            documents.map((doc) => (
+              <DocumentRow 
+                key={doc.id} 
+                document={doc} 
+                onDelete={() => fetchDocuments()}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* New Document Modal */}
+      {showNewDocumentModal && (
+        <NewDocumentModal
+          videoInfo={videoInfo}
+          selectedType={selectedDocumentType}
+          onTypeChange={setSelectedDocumentType}
+          onConfirm={handleCreateDocument}
+          onCancel={() => setShowNewDocumentModal(false)}
+          loading={loading}
+        />
+      )}
+    </div>
+  );
+}
+
+function DocumentRow({ document, onDelete }) {
+  const navigate = useNavigate();
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'COMPLETED': return 'text-green-600 bg-green-100';
+      case 'PROCESSING': return 'text-yellow-600 bg-yellow-100';
+      case 'FAILED': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await api.post(`/api/documents/${document.id}/export`, 
+        { format: 'pdf' }, 
+        { responseType: 'blob' }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${document.videoTitle || 'documento'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      toast.error('Erro ao baixar documento');
+    }
+  };
+
+  return (
+    <div className="p-6 hover:bg-gray-50">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h3 className="font-medium text-gray-900">
+            {document.videoTitle || 'Processando...'}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            {document.documentType} • {formatDate(document.createdAt)}
+          </p>
+          <div className="mt-2">
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(document.status)}`}>
+              {document.status === 'COMPLETED' ? 'Concluído' : 
+               document.status === 'PROCESSING' ? 'Processando' : 'Falhou'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {document.status === 'COMPLETED' && (
+            <>
+              <button
+                onClick={handleDownload}
+                className="text-blue-600 hover:text-blue-800"
+                title="Baixar PDF"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </button>
+              
+              <button
+                onClick={() => navigate(`/editor/${document.id}`)}
+                className="text-green-600 hover:text-green-800"
+                title="Editar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </button>
+            </>
+          )}
+          
+          {document.status === 'PROCESSING' && (
+            <button
+              onClick={() => navigate(`/processing/${document.lastJob?.id}`)}
+              className="text-yellow-600 hover:text-yellow-800"
+              title="Ver progresso"
+            >
+              <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewDocumentModal({ videoInfo, selectedType, onTypeChange, onConfirm, onCancel, loading }) {
+  const documentTypes = [
+    { value: 'EBOOK', label: 'Ebook', description: 'Livro digital estruturado com capítulos' },
+    { value: 'TUTORIAL', label: 'Tutorial', description: 'Guia passo-a-passo com instruções' },
+    { value: 'GUIDE', label: 'Guia Prático', description: 'Manual organizado por seções' },
+    { value: 'SUMMARY', label: 'Resumo', description: 'Síntese dos pontos principais' },
+    { value: 'PRESENTATION', label: 'Apresentação', description: 'Formato para slides ou apresentação' },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <h2 className="text-2xl font-bold mb-4">Criar Novo Documento</h2>
+        
+        {videoInfo && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold mb-2">Vídeo Selecionado:</h3>
+            <div className="flex items-center space-x-4">
+              <img 
+                src={videoInfo.thumbnail} 
+                alt="Thumbnail"
+                className="w-32 h-24 object-cover rounded"
+              />
+              <div>
+                <p className="text-sm text-gray-600">
+                  Duração: {videoInfo.durationFormatted}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Horas necessárias: {videoInfo.hoursNeeded}h
+                </p>
+                <p className="text-sm text-gray-600">
+                  Disponível: {videoInfo.hoursAvailable}h
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3">Escolha o tipo de documento:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {documentTypes.map((type) => (
+              <label
+                key={type.value}
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  selectedType === type.value
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="documentType"
+                  value={type.value}
+                  checked={selectedType === type.value}
+                  onChange={(e) => onTypeChange(e.target.value)}
+                  className="sr-only"
+                />
+                <div className="font-medium">{type.label}</div>
+                <div className="text-sm text-gray-500">{type.description}</div>
+              </label>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            disabled={loading}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading || !videoInfo?.canProcess}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Iniciando...
+              </>
+            ) : (
+              'Criar Documento'
+            )}
+          </button>
+        </div>
+        
+        {!videoInfo?.canProcess && (
+          <p className="text-red-600 text-sm mt-3">
+            Horas insuficientes no seu plano. Faça upgrade para processar este vídeo.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+Página de Processamento (frontend/src/pages/Processing.jsx)
+jsximport { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useSocket } from '../hooks/useSocket';
+import { api } from '../services/api';
+import toast from 'react-hot-toast';
+
+export default function Processing() {
+  const { jobId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const socket = useSocket();
+
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('Iniciando processamento...');
+  const [status, setStatus] = useState('PROCESSING');
+  const [error, setError] = useState(null);
+  const [documentId, setDocumentId] = useState(location.state?.documentId);
+
+  const videoInfo = location.state?.videoInfo;
+  const documentType = location.state?.documentType;
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Entrar na sala do job para receber updates
+    socket.emit('join-job', jobId);
+
+    // Escutar atualizações de progresso
+    socket.on('progress', (data) => {
+      setProgress(data.progress);
+      setCurrentStep(data.currentStep);
+      
+      if (data.error) {
+        setError(data.error);
+        setStatus('FAILED');
+        toast.error('Erro no processamento: ' + data.error);
+      } else if (data.progress === 100) {
+        setStatus('COMPLETED');
+        toast.success('Documento criado com sucesso!');
+        
+        // Redirecionar para o editor após 2 segundos
+        setTimeout(() => {
+          navigate(`/editor/${documentId}`, { 
+            replace: true,
+            state: { newDocument: true }
+          });
+        }, 2000);
+      }
+    });
+
+    // Buscar status inicial
+    fetchProgress();
+
+    return () => {
+      socket.off('progress');
+    };
+  }, [socket, jobId]);
+
+  const fetchProgress = async () => {
+    try {
+      const { data } = await api.get(`/api/videos/progress/${jobId}`);
+      
+      setProgress(data.progress);
+      setCurrentStep(data.currentStep);
+      setStatus(data.status);
+      setDocumentId(data.document?.id);
+      
+      if (data.errorMessage) {
+        setError(data.errorMessage);
+      }
+      
+      if (data.status === 'COMPLETED') {
+        setTimeout(() => {
+          navigate(`/editor/${data.document.id}`, { 
+            replace: true,
+            state: { newDocument: true }
+          });
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar progresso:', error);
+      setError('Erro ao buscar status do processamento');
+    }
+  };
+
+  const steps = [
+    { name: 'Analisando vídeo', completed: progress > 10 },
+    { name: 'Extraindo conteúdo', completed: progress > 30 },
+    { name: 'Processando com IA', completed: progress > 60 },
+    { name: 'Gerando documento', completed: progress > 80 },
+    { name: 'Finalizando', completed: progress === 100 }
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Processando Seu Documento
+        </h1>
+        <p className="text-gray-600">
+          Aguarde enquanto processamos o conteúdo do vídeo...
+        </p>
+      </div>
+
+      {/* Video Info */}
+      {videoInfo && (
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center space-x-4">
+            <img 
+              src={videoInfo.thumbnail}
+              alt="Thumbnail do vídeo"
+              className="w-32 h-24 object-cover rounded-lg"
+            />
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">Criando {documentType}</h3>
+              <p className="text-gray-600">
+                Duração: {videoInfo.durationFormatted}
+              </p>
+              <p className="text-sm text-gray-500">
+                Tempo estimado: {Math.max(60, videoInfo.duration / 60)} segundos
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Bar */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              {currentStep}
+            </span>
+            <span className="text-sm text-gray-500">
+              {progress}%
+            </span>
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                  step.completed ? 'bg-green-500' : 
+                  index === Math.floor(progress / 20) ? 'bg-blue-500' : 'bg-gray-300'
+                }`}>
+                  {step.completed ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </div>
+                <span className="text-xs text-gray-600 mt-2 text-center max-w-20">
+                  {step.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Status Messages */}
+      {status === 'COMPLETED' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <div>
+              <h3 className="font-medium text-green-800">
+                Documento criado com sucesso!
+              </h3>
+              <p className="text-green-700 text-sm">
+                Redirecionando para o editor...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0LTentar novamenteClaude ainda não tem a capacidade de executar o código que gera.GContinuarEditarjsxpath strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <div>
+              <h3 className="font-medium text-red-800">
+                Erro no processamento
+              </h3>
+              <p className="text-red-700 text-sm">
+                {error}
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              Voltar ao Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Real-time Log (Development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-lg">
+          <div>Status: {status}</div>
+          <div>Progress: {progress}%</div>
+          <div>Current Step: {currentStep}</div>
+          <div>Job ID: {jobId}</div>
+          <div>Document ID: {documentId}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+HOOKS PERSONALIZADOS
+Hook de Autenticação (frontend/src/hooks/useAuth.js)
+jsximport { useState, useEffect, createContext, useContext } from 'react';
+import { api } from '../services/api';
+
+const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const { data } = await api.get('/api/auth/me');
+        setUser(data.user);
+      }
+    } catch (error) {
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    const { data } = await api.post('/api/auth/login', { email, password });
+    
+    localStorage.setItem('token', data.token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+    setUser(data.user);
+    
+    return data;
+  };
+
+  const register = async (name, email, password) => {
+    const { data } = await api.post('/api/auth/register', { name, email, password });
+    
+    localStorage.setItem('token', data.token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+    setUser(data.user);
+    
+    return data;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    checkAuth
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  }
+  return context;
+}
+Hook de Socket.IO (frontend/src/hooks/useSocket.js)
+jsximport { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+
+export function useSocket() {
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      const newSocket = io(process.env.VITE_API_URL || 'http://localhost:3000', {
+        auth: { token },
+        transports: ['websocket', 'polling']
+      });
+
+      newSocket.on('connect', () => {
+        console.log('Socket conectado:', newSocket.id);
+      });
+
+      newSocket.on('disconnect', () => {
+        console.log('Socket desconectado');
+      });
+
+      newSocket.on('connect_error', (error) => {
+        console.error('Erro de conexão:', error);
+      });
+
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.close();
+      };
+    }
+  }, []);
+
+  return socket;
+}
+
+CONFIGURAÇÕES DO REPLIT
+Arquivo .replit
+tomlrun = "npm run dev"
+modules = ["nodejs-20"]
+
+[deployment]
+run = ["sh", "-c", "npm run build && npm start"]
+deploymentTarget = "cloudrun"
+
+[nix]
+channel = "stable-21_11"
+
+[env]
+PATH = "/home/runner/$REPL_SLUG/.config/npm/node_global/bin:/home/runner/$REPL_SLUG/node_modules/.bin"
+npm_config_prefix = "/home/runner/$REPL_SLUG/.config/npm/node_global"
+Scripts no package.json do Backend
+json{
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "cd ../frontend && npm run build",
+    "migrate": "npx prisma migrate dev",
+    "generate": "npx prisma generate",
+    "seed": "node prisma/seed.js"
+  }
+}
+Scripts no package.json do Frontend
+json{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
+
+INSTRUÇÕES FINAIS PARA O REPLIT AGENT
+Ordem de Criação:
+
+Criar estrutura de pastas conforme especificado
+Configurar backend primeiro: dependências, Prisma, rotas, serviços
+Configurar frontend: React, Tailwind, componentes
+Configurar Redis e filas
+Testar integração completa
+
+Variáveis de Ambiente Obrigatórias:
+envOPENAI_API_KEY=sk-seu-api-key-aqui
+DATABASE_URL=postgresql://...
+JWT_SECRET=senha-super-segura
+REDIS_HOST=localhost
+Comandos de Inicialização:
+bash# Backend
+cd backend
+npm install
+npx prisma migrate dev
+npx prisma generate
+
+# Frontend  
+cd frontend
+npm install
+
+# Desenvolvimento
+npm run dev
+Pontos Críticos:
+
+youtube-transcript: Biblioteca específica para extrair legendas
+Bull + Redis: Sistema de filas obrigatório para processamento assíncrono
+Puppeteer: Geração de PDFs - pode precisar de configurações especiais no Replit
+Socket.IO: Progresso em tempo real obrigatório
+Prisma: ORM configurado para PostgreSQL
+
+Limitações do Replit a Considerar:
+
+Puppeteer pode ser pesado - considere alternativas se necessário
+Redis pode precisar ser externo (Redis Cloud)
+Storage limitado - limpe arquivos temporários sempre
+
+IMPORTANTE: Este é um sistema completo e funcional. Cada parte foi projetada para trabalhar em conjunto. O Replit Agent deve seguir exatamente estas especificações para garantir que tudo funcione perfeitamente.
