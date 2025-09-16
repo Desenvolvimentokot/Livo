@@ -124,7 +124,18 @@ export default function Editor() {
             </div>
             
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm" data-testid="button-save">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  toast({
+                    title: "Feature Coming Soon",
+                    description: "Save Draft functionality will be available in a future update.",
+                    variant: "default",
+                  });
+                }}
+                data-testid="button-save"
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save Draft
               </Button>

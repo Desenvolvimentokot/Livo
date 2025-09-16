@@ -210,6 +210,13 @@ export default function NewDocumentForm() {
             type="button" 
             variant="outline" 
             size="lg"
+            onClick={() => {
+              toast({
+                title: "Feature Coming Soon",
+                description: "Save as Draft functionality will be available in a future update.",
+                variant: "default",
+              });
+            }}
             data-testid="button-save-draft"
           >
             Save as Draft

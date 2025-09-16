@@ -35,14 +35,8 @@ export default function Header() {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => {
-                  // Use fetch to logout and then redirect
-                  fetch('/api/logout', { credentials: 'include' })
-                    .then(() => {
-                      window.location.href = '/';
-                    })
-                    .catch(() => {
-                      window.location.href = '/api/logout';
-                    });
+                  // Navigate directly to logout endpoint which will redirect
+                  window.location.href = '/api/logout';
                 }}
                 data-testid="button-logout"
               >
