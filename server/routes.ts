@@ -10,6 +10,7 @@ import { websocketService } from "./services/websocketService";
 import * as youtubeService from "./services/youtubeService";
 import path from "path";
 import fs from "fs/promises";
+import { generatePdfFromDocument } from "./services/pdfService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -253,6 +254,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Download document as PDF
+  app.get('/api/documents/:id/pdf', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { format } = req.query as { format?: 'A4' | 'Letter' };
+      const userId = req.user!.claims.sub;
+      
+      const document = await storage.getDocument(parseInt(id));
+      
+      if (!document || document.userId !== userId) {
+        return res.status(404).json({ error: 'Document not found' });
+      }
+      
+      if (!document.content || document.status !== 'COMPLETED') {
+        return res.status(400).json({ error: 'Document not ready for PDF generation' });
+      }
+      
+      // Generate PDF from document content
+      const pdfResult = await generatePdfFromDocument(
+        document.content,
+        document.documentType,
+        {
+          format: format || 'A4',
+          includeHeaderFooter: true
+        }
+      );
+      
+      if (!pdfResult.success) {
+        return res.status(500).json({ error: 'Failed to generate PDF' });
+      }
+      
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${document.videoTitle || 'document'}.pdf"`);
+      res.setHeader('Content-Length', pdfResult.size.toString());
+      
+      // Send PDF buffer
+      res.send(pdfResult.content);
+      
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      res.status(500).json({ error: `Failed to generate PDF: ${error.message}` });
     }
   });
 

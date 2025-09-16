@@ -8,7 +8,13 @@ import Header from "@/components/Header";
 import DocumentPreview from "@/components/Editor/DocumentPreview";
 import EditorSidebar from "@/components/Editor/EditorSidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Save, Download, FileText, FileDown, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Editor() {
@@ -37,7 +43,7 @@ export default function Editor() {
     retry: false,
   });
 
-  const handleDownload = async () => {
+  const handleDownloadHtml = async () => {
     try {
       const response = await fetch(`/api/documents/${documentId}/download`, {
         credentials: 'include',
@@ -59,12 +65,45 @@ export default function Editor() {
       
       toast({
         title: "Success",
-        description: "Document downloaded successfully",
+        description: "Document HTML downloaded successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to download document",
+        description: "Failed to download HTML document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/pdf`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('PDF generation failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = globalThis.document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${(document as any)?.videoTitle || 'document'}.pdf`;
+      globalThis.document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Success",
+        description: "Document PDF downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF document",
         variant: "destructive",
       });
     }
@@ -139,10 +178,25 @@ export default function Editor() {
                 <Save className="h-4 w-4 mr-2" />
                 Save Draft
               </Button>
-              <Button onClick={handleDownload} size="sm" data-testid="button-download">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" data-testid="button-export">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleDownloadHtml} data-testid="button-download-html">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Download HTML
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadPdf} data-testid="button-download-pdf">
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
